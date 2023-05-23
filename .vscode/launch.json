@@ -1,0 +1,39 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch server",
+            "runtimeArgs": ["run-script", "dev"],
+            "runtimeExecutable": "npm",
+            "skipFiles": ["<node_internals>/**"],
+            "console": "integratedTerminal"
+        },
+
+        {
+            "type": "pwa-msedge",
+            "request": "launch",
+            "name": "Launch Edge",
+            "url": "http://127.0.0.1:5173",
+            "webRoot": "${workspaceFolder}/src"
+        },
+
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/src"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "All",
+            "configurations": ["Launch server", "Launch Edge", "Launch Chrome against localhost"]
+        }
+    ]
+}

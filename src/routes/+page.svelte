@@ -46,7 +46,12 @@
 
 <style>
 	.loading-spinner {
-		/* Add your spinner styles here */
+		width: 50px;
+		height: 50px;
+		border-radius: 50%;
+		border: 5px solid #ccc;
+		border-top-color: #333;
+		animation: spinner 0.8s linear infinite;
 	}
 
 	.grid {
