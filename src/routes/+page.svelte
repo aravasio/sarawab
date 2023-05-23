@@ -1,104 +1,96 @@
-<!-- src/routes/start.svelte -->
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
+	import { load } from '$lib/services/load'
+	import type { Client } from '$lib/types/Client';
 
-	let video: HTMLVideoElement;
-	let canvas: HTMLCanvasElement;
-	let link: HTMLAnchorElement;
-	let stream: MediaStream;
-	let downloadLink: HTMLAnchorElement;
+	let clients: Client[] = [];
+	let isLoading = true;
 
 	onMount(async () => {
-		if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-			stream = await navigator.mediaDevices.getUserMedia({ video: true });
-			video.srcObject = stream;
-			await video.play();
+		try {
+			const response = await load();
+			clients = response.body;
+		} catch (error) {
+			console.error(error);
+		} finally {
+			isLoading = false;
 		}
 	});
-
-	onDestroy(() => {
-		if (stream) {
-			stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
-		}
-	});
-
-	async function takePicture() {
-		const context = canvas.getContext('2d');
-		if (context) {
-			context.drawImage(video, 0, 0, canvas.width, canvas.height);
-			canvas.toBlob(async (blob: Blob | null) => {
-				if (blob) {
-					const plate = await extractPlate(blob);
-					goto(`/client/${plate}`);
-				}
-			});
-		}
-	}
-
-	async function storePicture() {
-		const context = canvas.getContext('2d');
-		if (context) {
-			context.drawImage(video, 0, 0, canvas.width, canvas.height);
-			canvas.toBlob((blob: Blob | null) => {
-				if (blob) {
-					const url = URL.createObjectURL(blob);
-					link.href = url;
-					link.download = 'picture.png';
-					link.click();
-					URL.revokeObjectURL(url); // Clean up after ourselves.
-				}
-			});
-		}
-	}
-
-	async function saveToComputer() {
-		const context = canvas.getContext('2d');
-		if (context) {
-			context.drawImage(video, 0, 0, canvas.width, canvas.height);
-			canvas.toBlob((blob: Blob | null) => {
-				if (blob) {
-					const url = URL.createObjectURL(blob);
-					downloadLink.href = url;
-					downloadLink.download = 'picture.png'; // Name of the downloaded file
-					downloadLink.click(); // Programmatically click the link to start the download
-					URL.revokeObjectURL(url); // Clean up by revoking the Blob URL
-				}
-			});
-		}
-	}
-
-	function extractPlate(blob: Blob) {
-		// Call your hypothetical API to recognize license plate from the picture
-		// Let's assume the API responds with the recognized license plate number
-		// For example, using fetch:
-		return fetch('http://api.licenseplaterecognition.com', {
-			method: 'POST',
-			body: blob
-		})
-			.then((response) => response.json())
-			.then((data) => {
-				const plate = data.plate; // Extract plate from response
-				return formatPlate(plate); // Format plate
-			});
-	}
-
-	function formatPlate(plate: String) {
-		// Remove spaces and validate plate format
-		const formatted = plate.replace(/\s+/g, '');
-		const format1 = /^[A-Z]{3}[0-9]{3}$/;
-		const format2 = /^[A-Z]{2}[0-9]{3}[A-Z]{2}$/;
-		if (format1.test(formatted) || format2.test(formatted)) {
-			return formatted;
-		} else {
-			throw new Error('Invalid license plate format.');
-		}
-	}
 </script>
 
-<video bind:this={video} width="640" height="480" autoplay />
-<canvas bind:this={canvas} width="640" height="480" />
-<button on:click={takePicture}>Take a picture to start</button>
-<button on:click={storePicture}>Store picture</button>
-<a bind:this={downloadLink} style="display: none;"></a> <!-- Hidden link for downloading -->
-<button on:click={saveToComputer}>Save to computer</button>
+{#if isLoading}
+	<div class="loading-spinner" />
+{:else}
+	<div class="grid">
+		{#each clients as client (client.id)}
+			<div class="card">
+				<button class="collapsible">{client.brand} {client.model}</button>
+				<div class="content">
+					<p><strong>Client ID:</strong> {client.id}</p>
+					<p><strong>Odometer Readings:</strong> {client.odometer_readings.join(', ')}</p>
+					<div class="wheel-pairs">
+						<div class="pair">
+							<h4>Pair 1</h4>
+							<p><strong>Tire Model:</strong> {client.wheel_pairs.pair1.tire_model.name}</p>
+						</div>
+						<div class="pair">
+							<h4>Pair 2</h4>
+							<p><strong>Tire Model:</strong> {client.wheel_pairs.pair2.tire_model.name}</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		{/each}
+	</div>
+{/if}
+
+<style>
+	.loading-spinner {
+		/* Add your spinner styles here */
+	}
+
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+		grid-gap: 1rem;
+		justify-items: center;
+		align-items: center;
+		margin: 1rem;
+	}
+
+	.card {
+		width: 100%;
+		background-color: #f1f1f1;
+		padding: 1rem;
+		border-radius: 8px;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	}
+
+	.collapsible {
+		width: 100%;
+		text-align: left;
+		background-color: #e0e0e0;
+		padding: 0.5rem;
+		border: none;
+		outline: none;
+		transition: background-color 0.3s;
+		cursor: pointer;
+	}
+
+	.collapsible:hover {
+		background-color: #ccc;
+	}
+
+	.content {
+		display: none;
+		padding: 1rem 0;
+	}
+
+	.content p {
+		margin: 0.5rem 0;
+	}
+
+	.pair {
+		margin-top: 1rem;
+	}
+</style>

@@ -1,10 +1,22 @@
+
 export type Client = {
     id: string;
-    brand: "Ford" | "Fiat" | "Toyota" | "Chevrolet";
+    brand: string;
     model: string;
     odometer_readings: number[];
     wheel_pairs: {
-        pair1: { brand_name: string, model_name: string },
-        pair2: { brand_name: string, model_name: string }
+        pair1: { tire_model: TireModel; };
+        pair2: { tire_model: TireModel; };
     };
-}
+};
+
+export type TireBrand = {
+    id: string;
+    name: string;
+    models: TireModel[];
+};
+
+export type TireModel = {
+    id: string;
+    name: string;
+};
